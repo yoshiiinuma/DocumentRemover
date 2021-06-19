@@ -1,0 +1,8 @@
+[TYPECHECK]
+ignored-classes:Resource
+
+[SIMILARITIES]
+disable=duplicate-code
+
+[EXCEPTIONS]
+disable=broad-except

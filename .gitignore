@@ -1,0 +1,10 @@
+__pycache__
+/tests/__pycache__
+certs/*
+
+*.pyc
+*.swp
+*.json
+*.env
+!Sample*.env
+*.yaml
