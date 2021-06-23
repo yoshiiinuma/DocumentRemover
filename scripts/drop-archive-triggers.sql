@@ -6,4 +6,4 @@ DROP PROCEDURE SetDeletedFileImage;
 DROP PROCEDURE SetArchiveFlagToRequests;
 DROP PROCEDURE InsertArchiveFiles;
 DROP PROCEDURE InsertArchiveFile;
-DROP PROCEDURE CreateTempFileTable;
+DROP PROCEDURE CreateUploadedFiles;

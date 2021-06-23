@@ -171,7 +171,7 @@ BEGIN
    WHERE a.Status = 3; 
 END$$
 
-CREATE PROCEDURE CreateTempFileTable()
+CREATE PROCEDURE CreateUploadFiles()
 BEGIN
 
   DROP TEMPORARY TABLE IF EXISTS UploadedFiles;
