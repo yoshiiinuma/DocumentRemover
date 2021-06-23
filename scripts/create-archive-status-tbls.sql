@@ -1,8 +1,8 @@
 DELIMITER $$
 
-DROP PROCEDURE IF EXISTS CreateArchiveStatus;
+DROP PROCEDURE IF EXISTS CreateArchiveDates;
 
-CREATE PROCEDURE CreateArchiveStatus(IN days1 INT, IN days2 INT)
+CREATE PROCEDURE CreateArchiveDates(IN days1 INT, IN days2 INT)
 BEGIN
   DECLARE days3 INT;
   DECLARE days4 INT;
@@ -12,9 +12,9 @@ BEGIN
   SET days3 = days1 + 30;
   SET days4 = days2 + 30;
 
-  DROP TEMPORARY TABLE IF EXISTS ArchiveStatus;
+  DROP TEMPORARY TABLE IF EXISTS ArchiveDates;
 
-  CREATE TEMPORARY TABLE ArchiveStatus
+  CREATE TEMPORARY TABLE ArchiveDates
   (
     TargetDate DATE,
     ArchiveDate DATE,
@@ -23,16 +23,16 @@ BEGIN
     ArchiveType TINYINT 
   );
 
-  DROP TEMPORARY TABLE IF EXISTS ArchiveSummary;
+  DROP TEMPORARY TABLE IF EXISTS ArchiveDateSummary;
 
-  CREATE TEMPORARY TABLE ArchiveSummary
+  CREATE TEMPORARY TABLE ArchiveDateSummary
   (
     ArchiveDate DATE,
     DeleteDate DATE,
     Cnt INT
   );
 
-  INSERT INTO ArchiveStatus (TargetDate, ArchiveDAte, DeleteDate, Cnt, ArchiveType)
+  INSERT INTO ArchiveDates (TargetDate, ArchiveDAte, DeleteDate, Cnt, ArchiveType)
   SELECT LastDate, LastDate + INTERVAL days1 DAY, LastDate + INTERVAL days3 DAY, COUNT(*), 1
     FROM Requests r
     LEFT JOIN (
@@ -48,7 +48,7 @@ BEGIN
    GROUP BY LastDate
    ORDER BY LastDate;
 
-  INSERT INTO ArchiveStatus (TargetDate, ArchiveDate, DeleteDate, Cnt, ArchiveType)
+  INSERT INTO ArchiveDates (TargetDate, ArchiveDate, DeleteDate, Cnt, ArchiveType)
   SELECT DATE(r.UpdatedAt) AS LastUpdate, MAX(DATE(r.UpdatedAt) + INTERVAL days2 DAY),
          MAX(DATE(r.UpdatedAt) + INTERVAL days4 DAY), COUNT(*), 2
     FROM Requests r
@@ -65,11 +65,30 @@ BEGIN
    GROUP BY DATE(r.UpdatedAt)
    ORDER BY DATE(r.UpdatedAt);
 
-  INSERT INTO ArchiveSummary (ArchiveDate, DeleteDate, Cnt)
+  INSERT INTO ArchiveDateSummary (ArchiveDate, DeleteDate, Cnt)
   SELECT ArchiveDate, DeleteDate, SUM(Cnt)
-    FROM ArchiveStatus
+    FROM ArchiveDates
    GROUP BY ArchiveDate, DeleteDate;
 
 END$$
+
+DROP VIEW IF EXISTS ArchiveStatus;
+
+CREATE VIEW ArchiveStatus
+    AS
+    SELECT r.Status AS RequestStatus, f.Status AS FileStatus,
+              Archived,
+              COUNT(DISTINCT(o.RequestId)) AS RequestCount,
+              COUNT(f.ArchiveFileId) AS FileCount
+         FROM Requests o
+         LEFT JOIN ArchivedRequests r
+           ON r.RequestId = o.RequestId
+         LEFT JOIN ArchivedFiles f
+           ON f.RequestId = o.RequestId
+        WHERE o.Status IN ('Approved', 'Denied', 'Other Resolution', 'Admin Close')
+        GROUP BY RequestStatus, FileStatus, Archived
+        ORDER BY RequestStatus, FileStatus, Archived
+;
+$$
 
 DELIMITER ;
