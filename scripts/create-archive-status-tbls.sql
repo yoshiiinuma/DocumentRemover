@@ -19,7 +19,7 @@ BEGIN
     TargetDate DATE,
     ArchiveDate DATE,
     DeleteDate DATE,
-    Cnt INT,
+    RequestCount INT,
     ArchiveType TINYINT 
   );
 
@@ -29,10 +29,10 @@ BEGIN
   (
     ArchiveDate DATE,
     DeleteDate DATE,
-    Cnt INT
+    RequestCount INT
   );
 
-  INSERT INTO ArchiveDates (TargetDate, ArchiveDAte, DeleteDate, Cnt, ArchiveType)
+  INSERT INTO ArchiveDates (TargetDate, ArchiveDAte, DeleteDate, RequestCount, ArchiveType)
   SELECT LastDate, LastDate + INTERVAL days1 DAY, LastDate + INTERVAL days3 DAY, COUNT(*), 1
     FROM Requests r
     LEFT JOIN (
@@ -48,7 +48,7 @@ BEGIN
    GROUP BY LastDate
    ORDER BY LastDate;
 
-  INSERT INTO ArchiveDates (TargetDate, ArchiveDate, DeleteDate, Cnt, ArchiveType)
+  INSERT INTO ArchiveDates (TargetDate, ArchiveDate, DeleteDate, RequestCount, ArchiveType)
   SELECT DATE(r.UpdatedAt) AS LastUpdate, MAX(DATE(r.UpdatedAt) + INTERVAL days2 DAY),
          MAX(DATE(r.UpdatedAt) + INTERVAL days4 DAY), COUNT(*), 2
     FROM Requests r
@@ -65,8 +65,8 @@ BEGIN
    GROUP BY DATE(r.UpdatedAt)
    ORDER BY DATE(r.UpdatedAt);
 
-  INSERT INTO ArchiveDateSummary (ArchiveDate, DeleteDate, Cnt)
-  SELECT ArchiveDate, DeleteDate, SUM(Cnt)
+  INSERT INTO ArchiveDateSummary (ArchiveDate, DeleteDate, RequestCount)
+  SELECT ArchiveDate, DeleteDate, SUM(RequestCnt)
     FROM ArchiveDates
    GROUP BY ArchiveDate, DeleteDate;
 
