@@ -154,7 +154,7 @@ def generate_traveler(seq1, seq2, owner, dates):
     tid = _gen_traveler_id(seq1, seq2)
     fname = Random.generate_name()
     lname = Random.generate_name()
-    adate = dates['created']
+    adate = dates['arrived']
     pic = _gen_traveler_file(seq1, seq2)
     c_at = dates['created']
     u_at = dates['updated']
@@ -186,19 +186,21 @@ def bulk_generate_requests(owner, base_date, days = 5, quantity = 1, offset = 0)
     for i in range(0, days):
         dates = _gen_dates(base_date, i)
         for j in range(1, quantity + 1):
-            data.append(generate_request(i * quantity + j, owner, dates))
+            data.append(generate_request(i * quantity + j + offset, owner, dates))
     return data
 
-def bulk_generate_travelers(owner, base_date, days = 5, quantity = 1, offset = 0):
+def bulk_generate_travelers(owner, base_date, days = 5, quantity = 1, invalid = False, offset = 0):
     """
     Generates Traveler data of the specified number
     """
     data = []
+    print(invalid)
     for i in range(0, days):
-        dates = _gen_dates(base_date, i)
+        dates = _gen_dates(base_date, i, invalid)
+        print(dates)
         for j in range(1, quantity + 1):
             for k in range(1, Random.random_number(1, 3) + 1):
-                data.append(generate_traveler(i * quantity + j, k, owner, dates))
+                data.append(generate_traveler(i * quantity + j + offset, k, owner, dates))
     return data
 
 def bulk_generate_documents(owner, base_date, days = 5, quantity = 1, offset = 0):
@@ -210,15 +212,15 @@ def bulk_generate_documents(owner, base_date, days = 5, quantity = 1, offset = 0
         dates = _gen_dates(base_date, i)
         for j in range(1, quantity + 1):
             for k in range(1, Random.random_number(1, 2) + 1):
-                data.append(generate_document(i * quantity + j, k, owner, dates))
+                data.append(generate_document(i * quantity + j + offset, k, owner, dates))
     return data
 
-def bulk_generate(owner, base_date, days = 5, quantity = 1, offset = 0):
+def bulk_generate(owner, base_date, days = 5, quantity = 1, invalid = False, offset = 0):
     """
     Generates data of the specified number
     """
     requests = bulk_generate_requests(owner, base_date, days, quantity, offset)
-    travelers = bulk_generate_travelers(owner, base_date, days, quantity, offset)
+    travelers = bulk_generate_travelers(owner, base_date, days, quantity, invalid, offset)
     docs = bulk_generate_documents(owner, base_date, days, quantity, offset)
     return {
         'requests': requests,
@@ -226,14 +228,12 @@ def bulk_generate(owner, base_date, days = 5, quantity = 1, offset = 0):
         'documents': docs
     }
 
-#def populate(conf, owner, base_date, num = 5, offset = 0):
-def populate(conf, owner, base_date, days = 5, quantity = 1, offset = 0):
+def populate(conf, owner, base_date, days = 5, quantity = 1, invalid = False, offset = 0):
     """
     Populates Requests, Travelers, Documents tables with randomly geneated data
     """
     try:
-        #data = bulk_generate(owner, base_date, num, offset)
-        data = bulk_generate(owner, base_date, days, quantity, offset)
+        data = bulk_generate(owner, base_date, days, quantity, invalid, offset)
         db = DB(conf)
         rslt = db.insert_requests(data['requests'])
         print(rslt)

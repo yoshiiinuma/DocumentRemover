@@ -21,6 +21,10 @@ def get_argparser():
     parser.add_argument('days', nargs='?', default=5, type=int, help='the number of days')
     parser.add_argument('quantity', nargs='?', default=1, type=int,
                         help='the number of requests per day')
+    parser.add_argument('--invalid-arrival-date', action=argparse.BooleanOptionalAction,
+                        help='set invalid arrival date')
+    parser.add_argument('offset', nargs='?', default=0, type=int,
+                        help='request id offset')
     return parser
 
 def main():
@@ -34,20 +38,8 @@ def main():
         print('ENV File Not Found: ' + args.envfile)
     conf = Config.load(args.envfile)
     base_date = datetime.strptime(args.date, '%Y%m%d')
-    #data = Generator.bulk_generate_requests(args.owner, base_date)
-    #data = Generator.bulk_generate_travelers(args.owner, base_date)
-    #data = Generator.bulk_generate_documents(args.owner, base_date)
-    #for r in data:
-    #    print(r)
-    #data = Generator.bulk_generate(args.owner, base_date, args.num_of_reqs)
-    #for r in data['requests']:
-    #    print(r)
-    #for r in data['travelers']:
-    #    print(r)
-    #for r in data['documents']:
-    #    print(r)
-    Generator.populate(conf, args.owner, base_date, args.days, args.quantity)
-
+    print(args)
+    Generator.populate(conf, args.owner, base_date, args.days, args.quantity, args.invalid_arrival_date, args.offset)
 
 if __name__ == '__main__':
     main()
