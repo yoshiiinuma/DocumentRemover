@@ -15,6 +15,10 @@ def get_argparser():
     """
     parser = argparse.ArgumentParser(description='path to env file')
     parser.add_argument('envfile', help='env file path')
+    parser.add_argument('days1', default=60, type=int,
+                        help='retention period for regular requests until archive')
+    parser.add_argument('days2', default=240, type=int,
+                        help='retention period for irregular requests until archive')
     return parser
 
 def main():
@@ -29,10 +33,10 @@ def main():
     conf = Config.load(args.envfile)
     db = DB(conf)
     db.connect()
-    rslt = db.exec('CALL CreateArchiveRequests(5)')
+    rslt = db.exec(f'CALL CreateArchiveRequests({args.days1})')
     print('CreateArchiveRequests Called')
     print(f'{rslt} ArchivedRequests Created')
-    rslt = db.exec('CALL CreateArchiveRequestsWithInvalidDate(5)')
+    rslt = db.exec(f'CALL CreateArchiveRequestsWithInvalidDate({args.days2})')
     print('CreateArchiveRequestsWithInvalidDate Called')
     print(f'{rslt} ArchivedRequests With Invalid Date Created')
     rslt = db.exec('CALL CreateArchiveFiles()')
