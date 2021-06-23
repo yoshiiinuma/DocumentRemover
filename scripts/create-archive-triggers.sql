@@ -150,7 +150,7 @@ BEGIN
          `PCS Orders` = IF(`PCS Orders` IS NULL OR `PCS Orders` = '', NULL, 'FileDeleted.png'),
          `Letter From Medical Provider` = IF(`Letter From Medical Provider` IS NULL OR `Letter From Medical Provider` = '', NULL, 'FileDeleted.png'),
          `Nucleic Acid Amplification Test` = IF(`Nucleic Acid Amplification Test` IS NULL OR `Nucleic Acid Amplification Test` = '', NULL, 'FileDeleted.png'),
-         r.UpdatedBy = 'SYSTEMUSER')
+         r.UpdatedBy = 'SYSTEMUSER'
    WHERE a.Status = 2;
 
   UPDATE ArchivedRequests
