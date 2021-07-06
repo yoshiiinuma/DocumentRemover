@@ -6,26 +6,6 @@ import time
 from src.drive import Drive
 from src.db import DB
 
-def get_files_to_populate2(conf):
-    """
-    Returns UploadedFiles by using connection.query
-    """
-    sql = """
-            SELECT r.RequestId, CAST(FLOOR(@rownum:=@rownum+1) AS CHAR) AS ArchiveFileId, FilePath, FileType
-              FROM UploadedFiles r, (SELECT @rownum:=0) seq
-             ORDER BY r.RequestId
-          """
-    try:
-        db = DB(conf)
-        db.call_create_upload_files()
-        rslt = db.fetch(sql)
-        db.close()
-        return rslt
-    except Exception as err:
-        print(err)
-        db.show_errors()
-        return None
-
 def get_files_to_populate(conf):
     """
     Returns UploadedFiles by using cursor
