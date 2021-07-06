@@ -14,7 +14,8 @@ def get_argparser():
     """
     parser = argparse.ArgumentParser(description='path to env file')
     parser.add_argument('envfile', help='env file path')
-    parser.add_argument('adate', nargs='?', help='date that moves data to DELETE folder (YYYYMMDD)')
+    parser.add_argument('archive_date', help='date that files are moved to DELETE folder (YYYYMMDD)')
+    parser.add_argument('current_date', nargs='?', help='date that files are deleted (YYYYMMDD)')
     return parser
 
 def main():
@@ -27,7 +28,7 @@ def main():
     else:
         print('ENV File Not Found: ' + args.envfile)
     archive = Archive(args.envfile)
-    rslt = archive.delete_folder(args.adate)
+    rslt = archive.delete_folder(args.archive_date, args.current_date)
     if rslt:
         print('DELETE_FILE Completed')
     else:
