@@ -22,6 +22,7 @@ Handles DB access
 """
 #pylint: disable=invalid-name
 import re
+from datetime import date
 from src.mysql_base_client import MysqlBaseClient
 
 class DB(MysqlBaseClient):
@@ -156,6 +157,7 @@ class DB(MysqlBaseClient):
     @staticmethod
     def conv_response_to_values(batch_rslt, archive_date):
         """
+        Coverts batch responses
 
         INPUT
 
@@ -166,10 +168,13 @@ class DB(MysqlBaseClient):
                     }
                 }
             }
+
+        OUTPUT
+
+            [(FileId,)]
         """
         return [
-            (archive_date, obj['response']['id'])
-            for obj in batch_rslt.values()
+            (obj['response']['id'],) for obj in batch_rslt.values()
         ]
 
     def set_archived_flag_to_files(self, batch_rslt, archive_date):
@@ -180,10 +185,11 @@ class DB(MysqlBaseClient):
         INPUT
             values: [(MoveDate, FileId)]
         """
-        SQL = """
+        formatted_date = re.sub(r'^(\d{4})(\d{2})(\d{2})$', r'\1-\2-\3', archive_date)
+        SQL = f"""
                UPDATE ArchivedFiles
                   SET Status = 2,
-                      MoveDate = %s
+                      MoveDate = '{formatted_date}' 
                 WHERE Status = 1
                   AND FileId = %s
               """
@@ -214,16 +220,22 @@ class DB(MysqlBaseClient):
               """
         return self.exec(SQL)
 
-    def complete_file_delete(self):
+    def complete_file_delete(self, archive_date, delete_date = None):
         """
         Updates ArchivedRequests Status after all the files are deleted
         Set 6 to ArchivedRequests.Status
         """
-        SQL = """
+        if not delete_date:
+            formatted_delete_date = date.today().strftime('%Y-%m-%d')
+        else:
+            formatted_delete_date = re.sub(r'^(\d{4})(\d{2})(\d{2})$', r'\1-\2-\3', delete_date)
+        formatted_archive_date = re.sub(r'^(\d{4})(\d{2})(\d{2})$', r'\1-\2-\3', archive_date)
+        SQL = f"""
                UPDATE ArchivedRequests r
                   SET r.Status = 6,
-                      r.DeleteDate = CURDATE()
+                      r.DeleteDate = '{formatted_delete_date}'
                 WHERE r.Status = 5
+                  AND r.ArchiveDate = '{formatted_archive_date}'
               """
         return self.exec(SQL)
 
@@ -479,3 +491,20 @@ class DB(MysqlBaseClient):
                  WHERE DocumentId = %s
               """
         return self.exec_many(SQL, values)
+
+    def call_create_archive_dates(self, days1, days2):
+        """
+        Call CreateArchiveDates Stored Proc, which creates ArchiveDates and ArchiveDateSummary
+        tables
+
+        INPUT
+            days1: retention period for regular requests until archive
+            days2: retention period for irregular requests until archive
+        """
+        return self.exec('CALL CreateArchiveDates({days1}, {days2})')
+
+    def call_create_upload_files(self):
+        """
+        Call CreateUploadFiles Stored Proc, which creates UploadedFiles TBL
+        """
+        return self.callproc('CreateUploadFiles')
