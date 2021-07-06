@@ -10,12 +10,7 @@ def populate_files(event, context):
     Sets 1 to ArchivedFiles.Status
     Sets 2 to ArchivedRequests.Status when all the dependent files Status = 1
     """
-    args = get_argparser().parse_args()
-    if exists(args.envfile):
-        print('ENV File Found: ' + args.envfile)
-    else:
-        print('ENV File Not Found: ' + args.envfile)
-    archive = Archive(args.envfile)
+    archive = Archive()
     total = 0
     limit = 200
     while True:
@@ -58,7 +53,7 @@ def move_files(event, context):
     Sets 2 to ArchivedFiles.Status
     Sets 4 to ArchivedRequests.Status if all the dependent files have Status 2
     """
-    arcgive = Archive()
+    archive = Archive()
     archive_date = date.today().strftime('%Y%m%d')
     cnt = archive.move_files_to_archive_dir(archive_date)
 
@@ -68,12 +63,10 @@ def delete_files(event, context):
 
     Sets 6 to ArchivedRequests.Status
     """
-    args = get_argparser().parse_args()
-    if exists(args.envfile):
-        print('ENV File Found: ' + args.envfile)
-    else:
-        print('ENV File Not Found: ' + args.envfile)
+    print(event)
+    print(event.keys())
+    #RETENTION_PERIOD = 31
+    RETENTION_PERIOD = 6
     archive = Archive()
-    archive_date = (date.today() + timedelta(-31)).strftime('%Y%m%d')
+    archive_date = (date.today() - timedelta(RETENTION_PERIOD)).strftime('%Y%m%d')
     rslt = archive.delete_folder(archive_date)
-
