@@ -8,8 +8,8 @@ CREATE EVENT RequestArchiveEvent1
   ON COMPLETION PRESERVE
 DO
 BEGIN
-  CALL CreateArchiveRequests(60);
-  CALL CreateArchiveRequestsWithInvalidDate(240);
+  CALL CreateArchiveRequests(60, NULL);
+  CALL CreateArchiveRequestsWithInvalidDate(240, NULL);
   CALL CreateArchiveFiles();
 END$$
 

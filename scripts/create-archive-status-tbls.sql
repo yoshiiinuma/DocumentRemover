@@ -1,20 +1,16 @@
 DELIMITER $$
 
-DROP PROCEDURE IF EXISTS CreateArchiveDates;
+DROP PROCEDURE IF EXISTS CreateArchiveDateCount;
 
-CREATE PROCEDURE CreateArchiveDates(IN days1 INT, IN days2 INT)
+CREATE PROCEDURE CreateArchiveDateCount(IN days1 INT, IN days2 INT, IN days3 INT)
 BEGIN
-  DECLARE days3 INT;
-  DECLARE days4 INT;
+  SET days1 = IFNULL(days1 + 1, 61);
+  SET days2 = IFNULL(days2 + 1, 241);
+  SET days3 = IFNULL(days3, 30);
 
-  SET days1 = IFNULL(days1, 60);
-  SET days2 = IFNULL(days2, 240);
-  SET days3 = days1 + 30;
-  SET days4 = days2 + 30;
+  DROP TEMPORARY TABLE IF EXISTS ArchiveDateCount;
 
-  DROP TEMPORARY TABLE IF EXISTS ArchiveDates;
-
-  CREATE TEMPORARY TABLE ArchiveDates
+  CREATE TEMPORARY TABLE ArchiveDateCount
   (
     TargetDate DATE,
     ArchiveDate DATE,
@@ -32,33 +28,32 @@ BEGIN
     RequestCount INT
   );
 
-  INSERT INTO ArchiveDates (TargetDate, ArchiveDAte, DeleteDate, RequestCount, ArchiveType)
-  SELECT LastDate, LastDate + INTERVAL days1 DAY, LastDate + INTERVAL days3 DAY, COUNT(*), 1
+  INSERT INTO ArchiveDateCount (TargetDate, ArchiveDate, DeleteDate, RequestCount, ArchiveType)
+  SELECT LastDate, LastDate + INTERVAL days1 DAY,
+         LastDate + INTERVAL days1 + days3 DAY, COUNT(*), 1
     FROM Requests r
     LEFT JOIN (
            SELECT RequestId, DATE(MAX(`Arrival Date`)) AS LastDate
              FROM Travelers
             GROUP BY RequestId) AS t
       ON t.RequestId = r.RequestId
-   WHERE (Archived = 0 OR Archived = NULL)
-     AND Status IN ('Approved', 'Denied', 'Other Resolution', 'Admin Close')
+   WHERE Status IN ('Approved', 'Denied', 'Other Resolution', 'Admin Close')
      AND LastDate IS NOT NULL
      AND DATEDIFF(LastDate, DATE(r.CreatedAt)) >= -10
      AND DATEDIFF(LastDate, DATE(r.CreatedAt)) <= 180
    GROUP BY LastDate
    ORDER BY LastDate;
 
-  INSERT INTO ArchiveDates (TargetDate, ArchiveDate, DeleteDate, RequestCount, ArchiveType)
+  INSERT INTO ArchiveDateCount (TargetDate, ArchiveDate, DeleteDate, RequestCount, ArchiveType)
   SELECT DATE(r.UpdatedAt) AS LastUpdate, MAX(DATE(r.UpdatedAt) + INTERVAL days2 DAY),
-         MAX(DATE(r.UpdatedAt) + INTERVAL days4 DAY), COUNT(*), 2
+         MAX(DATE(r.UpdatedAt) + INTERVAL days2 + days3 DAY), COUNT(*), 2
     FROM Requests r
     LEFT JOIN (
            SELECT RequestId, DATE(MAX(`Arrival Date`)) AS LastDate
              FROM Travelers
             GROUP BY RequestId) AS t
       ON t.RequestId = r.RequestId
-   WHERE (Archived = 0 OR Archived = NULL)
-     AND Status IN ('Approved', 'Denied', 'Other Resolution', 'Admin Close')
+   WHERE Status IN ('Approved', 'Denied', 'Other Resolution', 'Admin Close')
      AND (LastDate IS NULL
           OR DATEDIFF(LastDate, DATE(r.CreatedAt)) < -10
           OR DATEDIFF(LastDate, DATE(r.CreatedAt)) > 180)
@@ -66,8 +61,8 @@ BEGIN
    ORDER BY DATE(r.UpdatedAt);
 
   INSERT INTO ArchiveDateSummary (ArchiveDate, DeleteDate, RequestCount)
-  SELECT ArchiveDate, DeleteDate, SUM(RequestCnt)
-    FROM ArchiveDates
+  SELECT ArchiveDate, DeleteDate, SUM(RequestCount)
+    FROM ArchiveDateCount
    GROUP BY ArchiveDate, DeleteDate;
 
 END$$

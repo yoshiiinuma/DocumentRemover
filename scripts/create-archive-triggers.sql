@@ -1,9 +1,14 @@
 
 DELIMITER $$
 
-CREATE PROCEDURE CreateArchiveRequests(IN numOfDays INT)
+CREATE PROCEDURE CreateArchiveRequests(IN numOfDays INT, IN curDate DATE)
 BEGIN
-  SET numOfDays = IFNULL(numOfDays, 60);
+  IF (numOfDays IS NULL) THEN
+    SET numOfDays = 60;
+  END IF;
+  IF (curDate IS NULL OR curDate = '') THEN
+    SET curDate = CURRENT_DATE;
+  END IF;
 
   INSERT INTO ArchivedRequests(RequestId)
   SELECT r.RequestId
@@ -18,12 +23,17 @@ BEGIN
      AND LastDate IS NOT NULL
      AND DATEDIFF(LastDate, DATE(r.CreatedAt)) >= -10
      AND DATEDIFF(LastDate, DATE(r.CreatedAt)) <= 180
-     AND LastDate < DATE_SUB(CURRENT_DATE, INTERVAL numOfDays DAY);
+     AND LastDate < DATE_SUB(curDate, INTERVAL numOfDays DAY);
 END$$
 
-CREATE PROCEDURE CreateArchiveRequestsWithInvalidDate(IN numOfDays INT)
+CREATE PROCEDURE CreateArchiveRequestsWithInvalidDate(IN numOfDays INT, IN curDate DATE)
 BEGIN
-  SET numOfDays = IFNULL(numOfDays, 240);
+  IF (numOfDays IS NULL) THEN
+    SET numOfDays = 240;
+  END IF;
+  IF (curDate IS NULL OR curDate = '') THEN
+    SET curDate = CURRENT_DATE;
+  END IF;
 
   INSERT INTO ArchivedRequests(RequestId)
   SELECT r.RequestId
@@ -38,7 +48,7 @@ BEGIN
      AND (LastDate IS NULL
           OR DATEDIFF(LastDate, DATE(r.CreatedAt)) < -10
           OR DATEDIFF(LastDate, DATE(r.CreatedAt)) > 180)
-     AND DATE(UpdatedAt) < DATE_SUB(CURRENT_DATE, INTERVAL numOfDays DAY);
+     AND DATE(UpdatedAt) < DATE_SUB(curDate, INTERVAL numOfDays DAY);
 END$$
 
 CREATE PROCEDURE InsertArchiveFile(IN reqId VARCHAR(10), IN originalId VARCHAR(10), IN fileName TEXT, IN fileType TINYINT)
@@ -174,9 +184,9 @@ END$$
 CREATE PROCEDURE CreateUploadFiles()
 BEGIN
 
-  DROP TEMPORARY TABLE IF EXISTS UploadedFiles;
+  DROP TABLE IF EXISTS UploadedFiles;
 
-  CREATE TEMPORARY TABLE UploadedFiles
+  CREATE TABLE UploadedFiles
   (
     RequestId VARCHAR(10) NOT NULL,
     OriginId VARCHAR(10) NOT NULL,
@@ -227,5 +237,4 @@ BEGIN
 END$$
 
 DELIMITER ;
-
 
