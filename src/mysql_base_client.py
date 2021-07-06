@@ -83,6 +83,29 @@ class MysqlBaseClient:
             return None
         return rslt
 
+    def fetch(self, sql, limit = 1000):
+        """
+        Executes the given SELECT sql query
+        """
+        rslt = []
+        offset = 0
+        try:
+            self.connect()
+            while True:
+                suffix = f'LIMIT {limit}  OFFSET {offset}'
+                self.db.query(sql + suffix)
+                result = self.db.store_result()
+                rows = result.fetch_row(maxrows=0)
+                if not rows:
+                    break
+                rslt += rows
+                offset += len(rows)
+        except Exception as e:
+            print(e)
+            self.errors.append(e)
+            return None
+        return rslt
+
     def exec(self, sql):
         """
         Executes the given INSERT/UPDATE/DELETE sql statement
