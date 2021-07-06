@@ -6,9 +6,59 @@ import time
 from src.drive import Drive
 from src.db import DB
 
+def get_files_to_populate2(conf):
+    """
+    Returns UploadedFiles by using connection.query
+    """
+    sql = """
+            SELECT r.RequestId, CAST(FLOOR(@rownum:=@rownum+1) AS CHAR) AS ArchiveFileId, FilePath, FileType
+              FROM UploadedFiles r, (SELECT @rownum:=0) seq
+             ORDER BY r.RequestId
+          """
+    try:
+        db = DB(conf)
+        db.call_create_upload_files()
+        rslt = db.fetch(sql)
+        db.close()
+        return rslt
+    except Exception as err:
+        print(err)
+        db.show_errors()
+        return None
+
 def get_files_to_populate(conf):
     """
+    Returns UploadedFiles by using cursor
+    """
+    sql = """
+            SELECT r.RequestId, CAST(FLOOR(@rownum:=@rownum+1) AS CHAR) AS ArchiveFileId, FilePath, FileType
+              FROM UploadedFiles r, (SELECT @rownum:=0) seq
+             ORDER BY r.RequestId
+          """
+    try:
+        db = DB(conf)
+        db.call_create_upload_files()
+        limit = 1000
+        offset = 0
+        rslt = []
+        while True:
+            suffix = f'LIMIT {limit}  OFFSET {offset}'
+            data = db.query(sql + suffix)
+            rslt += data
+            offset += limit
+            if len(data) < limit:
+                break
+        db.close()
+        return rslt
+    except Exception as err:
+        print(err)
+        db.show_errors()
+        return None
+
+def get_files_to_populate_old(conf):
+    """
     Returns ArchivedFiles that need detailed file information from Google Drive
+    Run run_stored_procs before this function
     """
     try:
         rslt = []
@@ -101,7 +151,8 @@ def convert_to_files(data, conf):
     Drive.batch_copy_and_rename accepts
 
     INPUT
-      [(RequestId, ArchivedFileId, OriginalPath, OriginalType)]
+      data: [(RequestId, ArchivedFileId, OriginalPath, OriginalType)]
+      conf: configuration
 
     OUTPUT
       [{
