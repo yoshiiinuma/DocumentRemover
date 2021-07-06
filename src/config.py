@@ -5,7 +5,7 @@ import os
 from dotenv import dotenv_values
 
 ENV_DB = (
-    'DOCRMV_DB_CONNECTION_NAME',
+    'DOCRMV_DB_SOCKET',
     'DOCRMV_DB_HOST',
     'DOCRMV_DB_PORT',
     'DOCRMV_DB_USER',
