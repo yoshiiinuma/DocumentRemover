@@ -27,6 +27,7 @@ def main():
     else:
         print('ENV File Not Found: ' + args.envfile)
         return
+    print(args)
     archive = Archive(args.envfile)
     cnt = archive.move_files_to_archive_dir(args.adate)
 
