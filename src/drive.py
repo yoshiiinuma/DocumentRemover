@@ -333,7 +333,7 @@ class Drive:
         batch = self.client.new_batch_http_request(callback=self._handle_response)
         for obj in files:
             dst = obj['dst'] if obj.get('dst') else dst_folder_id
-            print(obj)
+            #print(obj)
             batch.add(service.files() \
                              .update(fileId=obj['id'], \
                                      removeParents=obj['src'], \

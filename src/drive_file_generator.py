@@ -6,27 +6,44 @@ import time
 from src.drive import Drive
 from src.db import DB
 
-def get_files_to_populate(conf):
+def call_create_upload_files(conf):
     """
-    Returns UploadedFiles by using cursor
+    Calls CreateUploadFiles Stored Proc, which creates UploadedFiles TBL
     """
-    sql = """
-            SELECT r.RequestId, CAST(FLOOR(@rownum:=@rownum+1) AS CHAR) AS ArchiveFileId, FilePath, FileType
-              FROM UploadedFiles r, (SELECT @rownum:=0) seq
-             ORDER BY r.RequestId
-          """
     try:
         db = DB(conf)
-        db.call_create_upload_files()
-        limit = 1000
-        offset = 0
+        rslt = db.call_create_upload_files()
+        db.close()
+        return rslt
+    except Exception as err:
+        print(err)
+        db.show_errors()
+        return None
+
+def get_files_to_populate(conf, limit = 1000, offset = 0, total_max = 10000):
+    """
+    Returns UploadedFiles by using cursor
+    
+    NOTE: Use call_craete_upload_files before this
+    """
+    try:
+        db = DB(conf)
+        #db.call_create_upload_files()
+        total = 0
         rslt = []
-        while True:
-            suffix = f'LIMIT {limit}  OFFSET {offset}'
-            data = db.query(sql + suffix)
+        while total < total_max:
+            sql = f"""
+                    SELECT r.RequestId, CAST(FLOOR(@rownum:=@rownum+1) AS CHAR) AS ArchiveFileId, FilePath, FileType
+                      FROM UploadedFiles r, (SELECT @rownum:={offset}) seq
+                     ORDER BY r.RequestId
+                     LIMIT {limit}  OFFSET {offset}
+                  """
+            data = db.query(sql)
+            size = len(data)
+            total += size
             rslt += data
             offset += limit
-            if len(data) < limit:
+            if size < limit:
                 break
         db.close()
         return rslt
@@ -167,7 +184,8 @@ def generate_files(files, conf):
             rslt = client.batch_copy_and_rename(files[index:index+size])
             index += size
             if rslt:
-                print(rslt)
+                print(f'DriveFileGenerator#generate_files: limit {limit}, index {index}, rslt {len(rslt)}')
+                #print(rslt)
             else:
                 client.show_errors()
             time.sleep(1)
@@ -177,7 +195,7 @@ def generate_files(files, conf):
         print(err)
         return None
 
-def generate(conf):
+def generate(conf, limit = 1000, offset = 0, total_max = 10000):
     """
     Generates files on Googld Drive for generated Requests, Travelers, and
     Documents data.
@@ -185,7 +203,7 @@ def generate(conf):
       ArchivedRequsts.Status = 1
       ArchivedFiles.Status = 0
     """
-    data = get_files_to_populate(conf)
+    data = get_files_to_populate(conf, limit, offset, total_max)
     files = convert_to_files(data, conf)
     return generate_files(files, conf)
 
