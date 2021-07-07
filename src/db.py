@@ -507,4 +507,4 @@ class DB(MysqlBaseClient):
         """
         Call CreateUploadFiles Stored Proc, which creates UploadedFiles TBL
         """
-        return self.callproc('CreateUploadFiles')
+        return self.exec('CALL CreateUploadFiles()')
