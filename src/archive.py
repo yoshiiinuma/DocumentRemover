@@ -2,6 +2,7 @@
 Archive Manager
 """
 #pylint: disable=invalid-name
+import traceback
 import re
 import time
 from datetime import datetime
@@ -44,20 +45,25 @@ class Archive:
             if not requests:
                 self._close()
                 return 0
-            #cnt = len(requests)
-            fmap = DB.conv_requests_to_map(requests)
+            rslt = DB.conv_requests_to_map(requests)
+            fmap = rslt['fmap']
+            no_files = rslt['no_files']
+            if len(no_files) > 0:
+                cnt_no_files = self.db.update_status_with_no_file(no_files)
+                print(f'ARCHIVE.POPULATE_FILE_INFO: {cnt_no_files} ArchivedFile No File Updated')
             names = fmap.keys()
             files = self.drive.get_files_by_name(names)
             cnt_files = self.db.populate_archive_file_info(files, fmap)
             print(f'ARCHIVE.POPULATE_FILE_INFO: {cnt_files} ArchivedFile Populated')
             cnt_reqs = self.db.complete_file_info_population()
             print(f'ARCHIVE.POPULATE_FILE_INFO: {cnt_reqs} ArchivedRequest Updated')
-            self._close()
             return cnt_files if cnt_files else 0
         except Exception as err:
+            traceback.print_exc()
             print(err)
-            self._close()
             return 0
+        finally:
+            self._close()
 
     def set_deleted_file_to_requests(self):
         """
@@ -72,6 +78,7 @@ class Archive:
             self.db.close()
             return rslt
         except Exception as err:
+            traceback.print_exc()
             print(err)
             return err
 
@@ -89,6 +96,7 @@ class Archive:
             self.db.close()
             return rslt
         except Exception as err:
+            traceback.print_exc()
             print(err)
             return err
 
@@ -131,36 +139,39 @@ class Archive:
         if not re.match(r'^20\d{2}\d{2}\d{2}$', archive_date):
             print('ARCHIVE.MOVE_FILES_TO_ARCHIVE_DIR: Invalid Date ' + archive_date)
             return 0
-        #try:
-        cnt = 0
-        self._open()
-        rslt = self.drive.create_folder(archive_date, self.conf['DRIVE_DELETED_FILES'])
-        dst_folder_id = rslt['id']
-        while True:
-            rslt = self.db.get_requests_to_archive()
-            if not rslt:
-                print('ARCHIVE.MOVE_FILES_TO_ARCHIVE_DIR: NO MORE DATA')
-                break
-            files = Archive.conv_to_moving_files(rslt)
-            limit = len(files)
-            print(f'ARCHIVE.MOVE_FILES_TO_ARCHIVE_DIR: PROCESSING ({limit})')
-            index = 0
-            size = 50
-            while index < limit:
-                batch_rslt = self.drive.batch_move(files[index:index+size], dst_folder_id)
-                rslt = self.db.set_archived_flag_to_files(batch_rslt, archive_date)
-                cnt += rslt
-                index += size
-                print(f'ARCHIVE.MOVE_FILES_TO_ARCHIVE_DIR: CUR {rslt} / TOTAL {cnt} Processed')
-                time.sleep(1)
-        rslt = self.db.complete_file_archive(dst_folder_id, archive_date)
-        print(f'ARCHIVE.MOVE_FILES_TO_ARCHIVE_DIR: {rslt} Requests Processed')
-        print(f'ARCHIVE.MOVE_FILES_TO_ARCHIVE_DIR: {cnt} Files Moved')
-        self._close()
-        return cnt
-        #except Exception as err:
-        #    print(err)
-        #    return 0
+        try:
+            cnt = 0
+            self._open()
+            rslt = self.drive.create_folder(archive_date, self.conf['DRIVE_DELETED_FILES'])
+            dst_folder_id = rslt['id']
+            while True:
+                rslt = self.db.get_requests_to_archive()
+                if not rslt:
+                    print('ARCHIVE.MOVE_FILES_TO_ARCHIVE_DIR: NO MORE DATA')
+                    break
+                files = Archive.conv_to_moving_files(rslt)
+                limit = len(files)
+                print(f'ARCHIVE.MOVE_FILES_TO_ARCHIVE_DIR: PROCESSING ({limit})')
+                index = 0
+                size = 50
+                while index < limit:
+                    batch_rslt = self.drive.batch_move(files[index:index+size], dst_folder_id)
+                    rslt = self.db.set_archived_flag_to_files(batch_rslt, archive_date)
+                    cnt += rslt
+                    index += size
+                    print(f'ARCHIVE.MOVE_FILES_TO_ARCHIVE_DIR: CUR {rslt} / TOTAL {cnt} Processed')
+                    time.sleep(1)
+            rslt = self.db.set_archived_flag_to_nonexistent_files()
+            print(f'ARCHIVE.MOVE_FILES_TO_ARCHIVE_DIR: {rslt} NON-Existent Files Updated')
+            rslt = self.db.complete_file_archive(dst_folder_id, archive_date)
+            print(f'ARCHIVE.MOVE_FILES_TO_ARCHIVE_DIR: {rslt} Requests Processed')
+            print(f'ARCHIVE.MOVE_FILES_TO_ARCHIVE_DIR: {cnt} Files Moved')
+            self._close()
+            return cnt
+        except Exception as err:
+            traceback.print_exc()
+            print(err)
+            return 0
 
     def delete_folder_by_current_date(self, current_date = None, retention_period = 30):
         """
@@ -215,6 +226,7 @@ class Archive:
             self._close()
             return True
         except Exception as err:
+            traceback.print_exc()
             print(err)
             return err
 
@@ -297,6 +309,7 @@ class Archive:
             print(f'{rslt} Requests Restored')
             return True
         except Exception as err:
+            traceback.print_exc()
             print(err)
             return err
 
@@ -318,5 +331,6 @@ class Archive:
             self._close()
             return True
         except Exception as err:
+            traceback.print_exc()
             print(err)
             return err

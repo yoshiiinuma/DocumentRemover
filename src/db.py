@@ -49,9 +49,24 @@ class DB(MysqlBaseClient):
         """
         Converts the query results from ArchivedFiles (get_files_to_populate_drive_info)
         into Map<fname, { requestId, archiveFileId }>
+
+        Ignore invalid file paths
+
+        Invalid File Path:
+            Empty string (907)
+            No '/' (1168)
+                   e.g. "The selected image could not be found.#filename=Lilian%20ID.jpg"
+                        "data:#filename=Covid-19%20Exception.pdf "
+            With '/' (6)
+                        "data:application/pdf;base64,#filename=COVID%20EXEMPTION%20LETTER.pdf"
+                        "data:image/png;base64,iVBORw0KGgoAAAA......"
         """
         fmap = {}
+        no_files = []
         for rid, aid, fpath, _ in data:
+            if '/' not in fpath or fpath.startswith('data:'):
+                no_files.append((aid,))
+                continue
             folder, fname = fpath.split('/')
             fmap[fname] = {
                 'requestId': rid,
@@ -59,7 +74,7 @@ class DB(MysqlBaseClient):
                 'originalPath': fpath,
                 'folderName': folder,
                 'originalFilename': fname }
-        return fmap
+        return { 'fmap': fmap, 'no_files': no_files }
 
     @staticmethod
     def conv_data_for_update(file_info, fmap):
@@ -97,6 +112,20 @@ class DB(MysqlBaseClient):
                       OriginalFileName = %s,
                       FileExtension= %s
                 WHERE ArchiveFileId = %s
+              """
+        return self.exec_many(SQL, values)
+
+    def update_status_with_no_file(self, values):
+        """
+        Updates Status of ArchivedFiles that have no files on Google Drive
+
+        values: [(ArchiveFileId,)]
+        """
+        SQL = """
+               UPDATE ArchivedFiles
+                  SET Status = 1
+                WHERE ArchiveFileId = %s
+                  AND Status = 0
               """
         return self.exec_many(SQL, values)
 
@@ -150,6 +179,7 @@ class DB(MysqlBaseClient):
                    ON f.RequestId = r.RequestId
                 WHERE r.Status = 4
                   AND f.Status = 1
+                  AND LENGTH(f.FileId) > 0
                 LIMIT {limit}
               """
         return self.query(SQL)
@@ -195,6 +225,21 @@ class DB(MysqlBaseClient):
               """
         values = DB.conv_response_to_values(batch_rslt, archive_date)
         return self.exec_many(SQL, values)
+
+    def set_archived_flag_to_nonexistent_files(self):
+        """
+        Sets 2 to ArchivedFiles.Status when file doesn't exist on Google Drive
+        """
+        SQL = """
+               UPDATE ArchivedFiles f
+                 JOIN ArchivedRequests r
+                   ON r.RequestId = f.RequestId
+                  SET f.Status = 2
+                WHERE r.Status = 4
+                  AND f.Status = 1
+                  AND f.FileId IS NULL
+              """
+        return self.exec(SQL)
 
     def complete_file_archive(self, archive_folder, archive_date):
         """
@@ -463,7 +508,8 @@ class DB(MysqlBaseClient):
                        `Letter From Medical Provider` =  %s,
                        `Nucleic Acid Amplification Test` =  %s,
                        Archived = 0,
-                       UpdatedBy = 'SYSTEMUSER'
+                       UpdatedBy = 'SYSTEMUSER',
+                       ForceUpdate = 1
                  WHERE RequestId = %s
                 """
         return self.exec_many(SQL, values)
