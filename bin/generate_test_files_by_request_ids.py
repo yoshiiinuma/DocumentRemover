@@ -1,0 +1,35 @@
+"""
+Generates test files on Google Drive
+"""
+#pylint: disable=wrong-import-position,import-error,R0801
+import argparse
+from os.path import dirname, abspath, exists
+import sys
+sys.path.insert(0, dirname(dirname(abspath(__file__))))
+import src.config as Config
+import src.drive_file_generator as Generator
+
+def get_argparser():
+    """
+    Build Argument Parser
+    """
+    parser = argparse.ArgumentParser(description='path to env file')
+    parser.add_argument('envfile', help='env file path')
+    parser.add_argument('request_ids', help='request ids')
+    return parser
+
+def main():
+    """
+    Main Function
+    """
+    args = get_argparser().parse_args()
+    if exists(args.envfile):
+        print('ENV File Found: ' + args.envfile)
+    else:
+        print('ENV File Not Found: ' + args.envfile)
+    print(args)
+    conf = Config.load(args.envfile)
+    Generator.generate_by_request_ids(conf, args.request_ids)
+
+if __name__ == '__main__':
+    main()
