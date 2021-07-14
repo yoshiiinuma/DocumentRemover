@@ -2,6 +2,7 @@
 Generates sample test data
 """
 #pylint: disable=invalid-name
+import traceback
 from datetime import timedelta
 from src.db import DB
 import src.random_generator as Random
@@ -243,6 +244,7 @@ def populate(conf, owner, base_date, days = 5, quantity = 1, invalid = False, of
         print(rslt)
         db.close()
     except Exception as err:
+        traceback.print_exc()
         print(err)
 
 def delete_all(conf):
@@ -268,6 +270,7 @@ def delete_all(conf):
         print(f'{rslt} ArchivedRequests Deleted')
         db.close()
     except Exception as err:
+        traceback.print_exc()
         print(err)
 
 def query(conf, sql):
@@ -281,5 +284,6 @@ def query(conf, sql):
         print(rslt)
         db.close()
     except Exception as err:
+        traceback.print_exc()
         print(err)
     return rslt

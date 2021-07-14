@@ -2,6 +2,7 @@
 MySql Client Base Class
 """
 #pylint: disable=invalid-name
+import traceback
 import MySQLdb
 
 class MysqlBaseClient:
@@ -43,6 +44,7 @@ class MysqlBaseClient:
                     db=self.conf['DOCRMV_DB_DATABASE'],
                     ssl=ssl_set)
         except Exception as err:
+            traceback.print_exc()
             print(err)
             self.errors.append(err)
             return False
@@ -59,6 +61,7 @@ class MysqlBaseClient:
             self.db = None
             return True
         except Exception as e:
+            traceback.print_exc()
             self.errors.append(e)
             return False
 
@@ -78,6 +81,7 @@ class MysqlBaseClient:
                 rslt += rows
             cur.close()
         except Exception as e:
+            traceback.print_exc()
             print(e)
             self.errors.append(e)
             return None
@@ -101,6 +105,7 @@ class MysqlBaseClient:
                 rslt += rows
                 offset += len(rows)
         except Exception as e:
+            traceback.print_exc()
             print(e)
             self.errors.append(e)
             return None
@@ -119,6 +124,7 @@ class MysqlBaseClient:
             cur.close()
         except Exception as e:
             self.db.rollback()
+            traceback.print_exc()
             print(e)
             self.errors.append(e)
             return None
@@ -137,6 +143,7 @@ class MysqlBaseClient:
             cur.close()
         except Exception as e:
             self.db.rollback()
+            traceback.print_exc()
             print(e)
             self.errors.append(e)
             return None
@@ -156,6 +163,7 @@ class MysqlBaseClient:
             cur.close()
         except Exception as e:
             self.db.rollback()
+            traceback.print_exc()
             print(e)
             self.errors.append(e)
             return None
@@ -174,6 +182,7 @@ class MysqlBaseClient:
             rslt = self.db.ping()
         except Exception as e:
             self.db.rollback()
+            traceback.print_exc()
             print(e)
             self.errors.append(e)
             return None
