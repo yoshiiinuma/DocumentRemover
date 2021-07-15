@@ -1,4 +1,6 @@
 
+import base64
+import re
 from datetime import date
 from datetime import timedelta
 from src.archive import Archive
@@ -7,7 +9,7 @@ def log_event(context, caller):
     """
     Logs Pub/Sub event
     """
-    print(f'{caller}: EventID {contet.event_id} {context.resource["name"]} {context.timestamp}')
+    print(f'{caller}: EventID {context.event_id} {context.resource["name"]} {context.timestamp}')
 
 def populate_files(message, context):
     """
@@ -65,6 +67,12 @@ def move_files(message, context):
     log_event(context, 'MOVE_FILES')
     archive = Archive()
     archive_date = date.today().strftime('%Y%m%d')
+    if 'data' in message:
+        raw_data = base64.b64decode(message['data']).decode('utf-8')
+        matched = re.search(r'DATE=(20\d{6})', raw_data)
+        if matched:
+            archive_date = matched[1]
+    print(f'MOVE_FILES: archive_date {archive_date}')
     cnt = archive.move_files_to_archive_dir(archive_date)
 
 def delete_files(message, context):
@@ -74,9 +82,18 @@ def delete_files(message, context):
     Sets 6 to ArchivedRequests.Status
     """
     log_event(context, 'DELETE_FILES')
-    print(message)
-    #RETENTION_PERIOD = 31
-    RETENTION_PERIOD = 6
+    retention_period = 30
+    current_date = date.today().strftime('%Y%m%d')
     archive = Archive()
-    archive_date = (date.today() - timedelta(RETENTION_PERIOD)).strftime('%Y%m%d')
-    rslt = archive.delete_folder(archive_date)
+    #archive_date = (date.today() - timedelta(retention_period)).strftime('%y%m%d')
+    print(message['data'])
+    if 'data' in message:
+        raw_data = base64.b64decode(message['data']).decode('utf-8')
+        matched = re.search(r'DATE=(20\d{6})', raw_data)
+        if matched:
+            current_date = matched[1]
+        matched = re.search(r'RETENTION=(\d{1,3})', raw_data)
+        if matched:
+            retention_period = int(matched[1])
+    print(f'DELETE_FILES: current_date {current_date}, retention_period {retention_period}')
+    archive.delete_folder_by_current_date(current_date, retention_period)
