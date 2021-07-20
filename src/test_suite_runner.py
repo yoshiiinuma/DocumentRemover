@@ -7,42 +7,42 @@ from datetime import datetime
 from datetime import timedelta
 from src.archive import Archive
 
-class ExtendedArchive(Archive):
-    """
-    Archive Manager class extended for test suite
-    """
-    def run_stored_procs(self, retention1, retention2, current_date=None):
-        """
-        Runs the following stored procedure:
-            CreateArchiveRequests
-            CreateArchiveRequestsWithInvalidDate
-            CreateArchiveFiles
-        
-        INPUT
-
-            retention1: retention period for regular requests until archive
-            retention2: retention period for irregular requests until archive
-            current_date: YYYYMMDD
-        """
-        if not current_date:
-            current_date = 'NULL'
-        elif re.match(r'^20\d{2}\d{2}\d{2}$', current_date):
-            current_date = re.sub(r'^(20\d{2})(\d{2})(\d{2})$', r'\1-\2-\3', current_date)
-        else:
-            print('RunSuiteRunner#run_suite: Invalid Date ' + current_date)
-            return
-        self.db.connect()
-        print(f'CALL CreateArchiveRequests({retention1}, {current_date})')
-        rslt = self.db.exec(f"CALL CreateArchiveRequests({retention1}, '{current_date}')")
-        print('CreateArchiveRequests Called')
-        print(f'{rslt} ArchivedRequests Created')
-        print(f'CALL CreateArchiveRequestsWithInvalidDate({retention2}, {current_date})')
-        rslt = self.db.exec(f"CALL CreateArchiveRequestsWithInvalidDate({retention2}, '{current_date}')")
-        print('CreateArchiveRequestsWithInvalidDate Called')
-        print(f'{rslt} ArchivedRequests With Invalid Date Created')
-        rslt = self.db.exec('CALL CreateArchiveFiles()')
-        print(f'{rslt} ArchivedFiles Created')
-        self.db.close()
+#class ExtendedArchive(Archive):
+#    """
+#    Archive Manager class extended for test suite
+#    """
+#    def run_stored_procs(self, retention1, retention2, current_date=None):
+#        """
+#        Runs the following stored procedure:
+#            CreateArchiveRequests
+#            CreateArchiveRequestsWithInvalidDate
+#            CreateArchiveFiles
+#        
+#        INPUT
+#
+#            retention1: retention period for regular requests until archive
+#            retention2: retention period for irregular requests until archive
+#            current_date: YYYYMMDD
+#        """
+#        if not current_date:
+#            current_date = 'NULL'
+#        elif re.match(r'^20\d{2}\d{2}\d{2}$', current_date):
+#            current_date = re.sub(r'^(20\d{2})(\d{2})(\d{2})$', r'\1-\2-\3', current_date)
+#        else:
+#            print('RunSuiteRunner#run_suite: Invalid Date ' + current_date)
+#            return
+#        self.db.connect()
+#        print(f'CALL CreateArchiveRequests({retention1}, {current_date})')
+#        rslt = self.db.exec(f"CALL CreateArchiveRequests({retention1}, '{current_date}')")
+#        print('CreateArchiveRequests Called')
+#        print(f'{rslt} ArchivedRequests Created')
+#        print(f'CALL CreateArchiveRequestsWithInvalidDate({retention2}, {current_date})')
+#        rslt = self.db.exec(f"CALL CreateArchiveRequestsWithInvalidDate({retention2}, '{current_date}')")
+#        print('CreateArchiveRequestsWithInvalidDate Called')
+#        print(f'{rslt} ArchivedRequests With Invalid Date Created')
+#        rslt = self.db.exec('CALL CreateArchiveFiles()')
+#        print(f'{rslt} ArchivedFiles Created')
+#        self.db.close()
 
 class TestSuiteRunner:
     """
@@ -57,7 +57,8 @@ class TestSuiteRunner:
         retention_period2: days to move files of irregular requests
         retention_period3: days to move files of regular requests
         """
-        self.archive = ExtendedArchive(envpath)
+        #self.archive = ExtendedArchive(envpath)
+        self.archive = Archive(envpath)
         self.retention_period1 = retention1
         self.retention_period2 = retention2
         self.retention_period3 = retention3
@@ -76,7 +77,7 @@ class TestSuiteRunner:
         if not re.match(r'^20\d{2}\d{2}\d{2}$', current_date):
             print('RunSuiteRunner#run_suite: Invalid Date ' + current_date)
             return
-        self.archive.run_stored_procs(self.retention_period1, self.retention_period2, current_date)
+        self.archive.prepare_for_archive(self.retention_period1, self.retention_period2, current_date)
         cnt = self.archive.populate_file_info(self.LIMIT)
         print(f'POPULATE_FILE_INFO: {cnt} ArchivedFiles Populated')
         self.archive.set_deleted_file_to_requests()

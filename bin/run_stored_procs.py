@@ -9,7 +9,8 @@ from os.path import dirname, abspath, exists
 import sys
 sys.path.insert(0, dirname(dirname(abspath(__file__))))
 import src.config as Config
-from src.db import DB
+#from src.db import DB
+from src.archive import Archive
 
 def check_date(value):
     if not re.match(r'^20\d{6}$', value):
@@ -39,18 +40,20 @@ def main():
     else:
         print('ENV File Not Found: ' + args.envfile)
     print(args)
-    conf = Config.load(args.envfile)
-    db = DB(conf)
-    db.connect()
-    rslt = db.exec(f"CALL CreateArchiveRequests({args.days1}, '{args.current_date}')")
-    print('CreateArchiveRequests Called')
-    print(f'{rslt} ArchivedRequests Created')
-    rslt = db.exec(f"CALL CreateArchiveRequestsWithInvalidDate({args.days2}, '{args.current_date}')")
-    print('CreateArchiveRequestsWithInvalidDate Called')
-    print(f'{rslt} ArchivedRequests With Invalid Date Created')
-    rslt = db.exec('CALL CreateArchiveFiles()')
-    print(f'{rslt} ArchivedFiles Created')
-    db.close()
+    #conf = Config.load(args.envfile)
+    #db = DB(conf)
+    #db.connect()
+    #rslt = db.exec(f"CALL CreateArchiveRequests({args.days1}, '{args.current_date}')")
+    #print('CreateArchiveRequests Called')
+    #print(f'{rslt} ArchivedRequests Created')
+    #rslt = db.exec(f"CALL CreateArchiveRequestsWithInvalidDate({args.days2}, '{args.current_date}')")
+    #print('CreateArchiveRequestsWithInvalidDate Called')
+    #print(f'{rslt} ArchivedRequests With Invalid Date Created')
+    #rslt = db.exec('CALL CreateArchiveFiles()')
+    #print(f'{rslt} ArchivedFiles Created')
+    #db.close()
+    archive = Archive(args.envfile)
+    archive.prepare_for_archive(args.days1, args.days2, args.current_date)
 
 if __name__ == '__main__':
     main()

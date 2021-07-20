@@ -32,6 +32,41 @@ class Archive:
         self.db.close()
         self.drive.close()
 
+    def prepare_for_archive(self, retention1, retention2, current_date=None):
+        """
+        Creates ArchivedRequests and ArchivedFiles Records
+        Runs the following stored procedure:
+            CreateArchiveRequests
+            CreateArchiveRequestsWithInvalidDate
+            CreateArchiveFiles
+        
+        INPUT
+
+            retention1: retention period for regular requests until archive
+            retention2: retention period for irregular requests until archive
+            current_date: YYYYMMDD
+        """
+        if not current_date:
+            current_date = 'NULL'
+        elif re.match(r'^20\d{2}\d{2}\d{2}$', current_date):
+            current_date = re.sub(r'^(20\d{2})(\d{2})(\d{2})$', r'\1-\2-\3', current_date)
+        else:
+            print('ARCVHIVE.RUN_STORED_PROCS: RunSuiteRunner#run_suite: Invalid Date ' + current_date)
+            return
+        self.db.connect()
+        print(f'ARCVHIVE.RUN_STORED_PROCS: CALL CreateArchiveRequests({retention1}, {current_date})')
+        rslt = self.db.exec(f"CALL CreateArchiveRequests({retention1}, '{current_date}')")
+        print('ARCVHIVE.RUN_STORED_PROCS: CreateArchiveRequests Completed')
+        print(f'ARCVHIVE.RUN_STORED_PROCS: {rslt} ArchivedRequests Created')
+        print(f'ARCVHIVE.RUN_STORED_PROCS: CALL CreateArchiveRequestsWithInvalidDate({retention2}, {current_date})')
+
+        rslt = self.db.exec(f"CALL CreateArchiveRequestsWithInvalidDate({retention2}, '{current_date}')")
+        print('ARCVHIVE.RUN_STORED_PROCS: CreateArchiveRequestsWithInvalidDate Completed')
+        print(f'ARCVHIVE.RUN_STORED_PROCS: {rslt} ArchivedRequests With Invalid Date Created')
+        rslt = self.db.exec('CALL CreateArchiveFiles()')
+        print(f'ARCVHIVE.RUN_STORED_PROCS: {rslt} ArchivedFiles Created')
+        self.db.close()
+
     def populate_file_info(self, limit = 1000):
         """
         Updates ArchivedFiles with information from Google Drive
