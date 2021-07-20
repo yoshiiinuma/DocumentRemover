@@ -110,7 +110,7 @@ class DB(MysqlBaseClient):
                       SrcFolder = %s,
                       FileId = %s,
                       OriginalFileName = %s,
-                      FileExtension= %s
+                      FileExtension = %s
                 WHERE ArchiveFileId = %s
               """
         return self.exec_many(SQL, values)
