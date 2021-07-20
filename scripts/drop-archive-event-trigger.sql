@@ -1,4 +1,3 @@
 
-DROP EVENT RequestArchiveEvent1;
-DROP EVENT RequestArchiveEvent2;
+DROP EVENT RequestArchiveEvent;
 
