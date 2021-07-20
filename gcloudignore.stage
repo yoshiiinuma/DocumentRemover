@@ -26,4 +26,5 @@ README.md
 *.json
 !creds-stage.json
 *.swp
+*.sql
 
