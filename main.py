@@ -11,6 +11,40 @@ def log_event(context, caller):
     """
     print(f'{caller}: EventID {context.event_id} {context.resource["name"]} {context.timestamp}')
 
+def prepare_for_archive(message, context):
+    """
+    Creates ArchivedRequests and ArchivedFiles Records
+    Runs the following stored procedure:
+        CreateArchiveRequests
+        CreateArchiveRequestsWithInvalidDate
+        CreateArchiveFiles
+
+    Parameters:
+
+        retention1: retention period for regular requests until archive
+        retention2: retention period for irregular requests until archive
+        current_date: YYYYMMDD
+    """
+    retention1 = 60
+    retention2 = 240
+    current_date = date.today().strftime('%Y%m%d')
+    if 'data' in message:
+        raw_data = base64.b64decode(message['data']).decode('utf-8')
+        matched = re.search(r'DATE=(20\d{6})', raw_data)
+        if matched:
+            current_date = matched[1]
+        matched = re.search(r'RETENTION1=(\d{1,3})', raw_data)
+        if matched:
+            retention1 = int(matched[1])
+        matched = re.search(r'RETENTION2=(\d{1,3})', raw_data)
+        if matched:
+            retention2 = int(matched[1])
+
+    log_event(context, 'RUN_STORED_PROCS')
+    print(f'RUN_STORED_PROC: current_date {current_date}, retention1 {retention1}, retention2 {retention2}')
+    archive = Archive()
+    archive.prepare_for_archive(retention1, retention2, current_date)
+
 def populate_files(message, context):
     """
     Updates ArchivedFiles with information from Google Drive
