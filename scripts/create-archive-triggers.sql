@@ -18,11 +18,13 @@ BEGIN
              FROM Travelers
             GROUP BY RequestId) AS t
       ON t.RequestId = r.RequestId
+    LEFT JOIN ArchivedRequests a ON a.RequestId = r.RequestId
    WHERE (Archived = 0 OR Archived = NULL)
-     AND Status IN ('Approved', 'Denied', 'Other Resolution', 'Admin Close')
+     AND r.Status IN ('Approved', 'Denied', 'Other Resolution', 'Admin Close')
      AND LastDate IS NOT NULL
      AND DATEDIFF(LastDate, DATE(r.CreatedAt)) >= -10
      AND DATEDIFF(LastDate, DATE(r.CreatedAt)) <= 180
+     AND a.RequestId IS NULL
      AND LastDate < DATE_SUB(curDate, INTERVAL numOfDays DAY);
 END$$
 
@@ -43,12 +45,14 @@ BEGIN
              FROM Travelers
             GROUP BY RequestId) AS t
       ON t.RequestId = r.RequestId
+    LEFT JOIN ArchivedRequests a ON a.RequestId = r.RequestId
    WHERE (Archived = 0 OR Archived = NULL)
-     AND Status IN ('Approved', 'Denied', 'Other Resolution', 'Admin Close')
+     AND r.Status IN ('Approved', 'Denied', 'Other Resolution', 'Admin Close')
      AND (LastDate IS NULL
           OR DATEDIFF(LastDate, DATE(r.CreatedAt)) < -10
           OR DATEDIFF(LastDate, DATE(r.CreatedAt)) > 180)
-     AND DATE(UpdatedAt) < DATE_SUB(curDate, INTERVAL numOfDays DAY);
+     AND a.RequestId IS NULL
+     AND DATE(r.UpdatedAt) < DATE_SUB(curDate, INTERVAL numOfDays DAY);
 END$$
 
 CREATE PROCEDURE InsertArchiveFile(IN reqId VARCHAR(10), IN originalId VARCHAR(10), IN fileName TEXT, IN fileType TINYINT)
@@ -140,26 +144,26 @@ BEGIN
   UPDATE Travelers t
     JOIN ArchivedRequests a
       ON a.RequestId = t.RequestId
-     SET `Picture ID` = 'FileDeleted.png',
+     SET `Picture ID` = 'FileArchived.png',
          t.UpdatedBy = 'SYSTEMUSER'
    WHERE a.Status = 2;
 
   UPDATE Documents d
     JOIN ArchivedRequests a
       ON a.RequestId = d.RequestId
-     SET File = 'FileDeleted.png',
+     SET File = 'FileArchived.png',
          d.UpdatedBy = 'SYSTEMUSER'
    WHERE a.Status = 2;
 
   UPDATE Requests r
     JOIN ArchivedRequests a
       ON a.RequestId = r.RequestId
-     SET `Project Document 1` = IF(`Project Document 1` IS NULL OR `Project Document 1` = '', NULL, 'FileDeleted.png'),
-         `Project Document 2` = IF(`Project Document 2` IS NULL OR `Project Document 2` = '', NULL, 'FileDeleted.png'),
-         `Proof of Port of Embarkation` = IF(`Proof of Port of Embarkation` IS NULL OR `Proof of Port of Embarkation` = '', NULL, 'FileDeleted.png'),
-         `PCS Orders` = IF(`PCS Orders` IS NULL OR `PCS Orders` = '', NULL, 'FileDeleted.png'),
-         `Letter From Medical Provider` = IF(`Letter From Medical Provider` IS NULL OR `Letter From Medical Provider` = '', NULL, 'FileDeleted.png'),
-         `Nucleic Acid Amplification Test` = IF(`Nucleic Acid Amplification Test` IS NULL OR `Nucleic Acid Amplification Test` = '', NULL, 'FileDeleted.png'),
+     SET `Project Document 1` = IF(`Project Document 1` IS NULL OR `Project Document 1` = '', NULL, 'FileArchived.png'),
+         `Project Document 2` = IF(`Project Document 2` IS NULL OR `Project Document 2` = '', NULL, 'FileArchived.png'),
+         `Proof of Port of Embarkation` = IF(`Proof of Port of Embarkation` IS NULL OR `Proof of Port of Embarkation` = '', NULL, 'FileArchived.png'),
+         `PCS Orders` = IF(`PCS Orders` IS NULL OR `PCS Orders` = '', NULL, 'FileArchived.png'),
+         `Letter From Medical Provider` = IF(`Letter From Medical Provider` IS NULL OR `Letter From Medical Provider` = '', NULL, 'FileArchived.png'),
+         `Nucleic Acid Amplification Test` = IF(`Nucleic Acid Amplification Test` IS NULL OR `Nucleic Acid Amplification Test` = '', NULL, 'FileArchived.png'),
          r.UpdatedBy = 'SYSTEMUSER',
          r.ForceUpdate = 1
    WHERE a.Status = 2;
