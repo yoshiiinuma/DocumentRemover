@@ -15,7 +15,8 @@ from src.archive import Archive
 def check_date(value):
     if not re.match(r'^20\d{6}$', value):
         raise argparse.ArgumentTypeError('Current Date must be YYYYMMDD: ' + value)
-    return re.sub(r'^(20\d{2})(\d{2})(\d{2})$', r'\1-\2-\3', value)
+    #return re.sub(r'^(20\d{2})(\d{2})(\d{2})$', r'\1-\2-\3', value)
+    return value
 
 def get_argparser():
     """
