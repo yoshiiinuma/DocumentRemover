@@ -66,7 +66,7 @@ def populate_files(message, context):
 
 def set_deleted_file_path(message, context):
     """
-    Replaces file paths of deleted files with FileDeleted.png
+    Replaces file paths of deleted files with FileArchived.png
 
     Call stored proc SetDeletedFileImage 
     Sets 3 to ArchivedRequests.Status
@@ -79,9 +79,9 @@ def set_deleted_file_path(message, context):
 
 def set_archive_flag(message, context):
     """
-    Replaces deleted file path with FileDeleted.png
+    Sets 1 to Requests.Archived
 
-    Call stored proc SetDeletedFileImage 
+    Call stored proc SetArchiveFlagToRequests
     Sets 1 to Requests.Archived
     Sets 4 to ArchivedRequests.Status
     """

@@ -21,6 +21,7 @@ def get_argparser():
 
 FILES = (
     './assets/FileDeleted.png',
+    './assets/FileArchived.png',
     './assets/Sample.docx',
     './assets/Sample.jpg',
     './assets/Sample.pdf',

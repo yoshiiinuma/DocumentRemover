@@ -1,6 +1,6 @@
 """
 Replaces file paths on Requests, Travelers, and Documents
-with one to FileDeleted.png
+with one to FileArchived.png
 """
 #pylint: disable=wrong-import-position,import-error
 import argparse

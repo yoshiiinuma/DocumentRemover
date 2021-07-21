@@ -149,7 +149,7 @@ class DB(MysqlBaseClient):
 
     def set_deleted_file_to_requests(self):
         """
-        Replaces with FileDeleted.png all the file paths of Requests that are
+        Replaces with FileArchived.png all the file paths of Requests that are
         in Archived Status 2
         SetDeletedFileImage sets 3 to ArchivedRequests.Status
         """
