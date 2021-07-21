@@ -15,7 +15,8 @@ def get_argparser():
     """
     parser = argparse.ArgumentParser(description='path to env file')
     parser.add_argument('envfile', help='env file path')
-    parser.add_argument('folder_id', help='folder id to retrieve files')
+    #parser.add_argument('folder_id', help='folder id to retrieve files')
+    parser.add_argument('name', help='file name to retrieve')
     return parser
 
 def main():
@@ -31,9 +32,12 @@ def main():
     conf = Config.load(args.envfile)
     client = Drive(conf)
     r = client.connect()
-    r = client.get_files_in_folder(args.folder_id)
-    for f in r['files']:
-        print(f"name {f['name']} id {f['id']}")
+    #r = client.get_files_in_folder(args.folder_id)
+    #for f in r['files']:
+    #    print(f"name {f['name']} id {f['id']}")
+    r = client.get_files_by_name([args.name])
+    for f in r:
+        print(f)
     client.close()
 
 if __name__ == '__main__':
